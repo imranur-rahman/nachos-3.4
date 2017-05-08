@@ -85,14 +85,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
-	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
-	pageTable[i].valid = true;
-	pageTable[i].use = false;
-	pageTable[i].dirty = false;
-	pageTable[i].readOnly = false;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
+    	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+    	pageTable[i].physicalPage = i;
+    	pageTable[i].valid = true;
+    	pageTable[i].use = false;
+    	pageTable[i].dirty = false;
+    	pageTable[i].readOnly = false;  // if the code segment was entirely on 
+                    					// a separate page, we could set its 
+                    					// pages to be read-only
     }
     
 // zero out the entire address space, to zero the unitialized data segment 
