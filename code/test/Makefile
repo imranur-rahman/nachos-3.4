@@ -12,32 +12,33 @@
 
 # if you are cross-compiling, you need to point to the right executables
 # and change the flags to ld and the build procedure for as
-#GCCDIR = ~/gnu/local/decstation-ultrix/bin/
-GCCDIR = /usr/local/decstation-ultrix/bin/
+
+GCCDIR = ../../../gnu-decstation-ultrix/decstation-ultrix/2.95.3/
+
 LDFLAGS = -T script -N
-ASFLAGS = -mips1
+ASFLAGS = -mips2
 CPPFLAGS = $(INCDIR)
 
-
 # if you aren't cross-compiling:
-#GCCDIR =
-#LDFLAGS = -N -T 0
-#ASFLAGS =
-#CPPFLAGS = -P $(INCDIR)
+# GCCDIR =
+# LDFLAGS = -N -T 0
+# ASFLAGS =
+# CPPFLAGS = -P $(INCDIR)
 
+PATH = $(GCCDIR):/lib:/usr/bin:/bin
 
-CC = $(GCCDIR)gcc
+CC = $(GCCDIR)gcc -B../../../gnu-decstation-ultrix/
 AS = $(GCCDIR)as
 LD = $(GCCDIR)ld
 
-CPP = /lib/cpp
+CPP = gcc -E
 INCDIR =-I../userprog -I../threads
-CFLAGS = -G 0 -c $(INCDIR) -mips1
+CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort
+all: halt shell matmult sort array exittest exectest
 
 start.o: start.s ../userprog/syscall.h
-	$(CPP) $(CPPFLAGS) start.s > strt.s
+	$(CPP) $(CPPFLAGS) start.c > strt.s
 	$(AS) $(ASFLAGS) -o start.o strt.s
 	rm strt.s
 
@@ -65,16 +66,20 @@ matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	../bin/coff2noff matmult.coff matmult
 
+array.o: array.c
+	$(CC) $(CFLAGS) -c array.c
+array: array.o start.o
+	$(LD) $(LDFLAGS) start.o array.o -o array.coff
+	../bin/coff2noff array.coff array
 
-# Estas reglas sirven para compilar programas simples,
-# que consistan en un único fuente.
-# Las reglas anteriores para construir los ejecutables
-# halt, shell, sort y matmult se podrían suprimir
+exittest.o: exittest.c
+	$(CC) $(CFLAGS) -c exittest.c
+exittest: exittest.o start.o
+	$(LD) $(LDFLAGS) start.o exittest.o -o exittest.coff
+	../bin/coff2noff exittest.coff exittest
 
-%: %.c 
-	make start.o 
-	$(CC) $(CFLAGS) -c $<
-	$(LD) $(LDFLAGS) start.o $*.o -o $*.coff
-	../bin/coff2noff $*.coff $@
-	
-
+exectest.o: exectest.c
+	$(CC) $(CFLAGS) -c exectest.c
+exectest: exectest.o start.o
+	$(LD) $(LDFLAGS) start.o exectest.o -o exectest.coff
+	../bin/coff2noff exectest.coff exectest

@@ -14,6 +14,11 @@
 #include "addrspace.h"
 #include "synch.h"
 
+#include "memorymanager.h"
+
+MemoryManager *memoryManager;
+Lock *memoryLock;
+
 //----------------------------------------------------------------------
 // StartProcess
 // 	Run a user program.  Open the executable, load it into
@@ -23,6 +28,9 @@
 void
 StartProcess(const char *filename)
 {
+    memoryManager = new MemoryManager(NumPhysPages);
+    memoryLock = new Lock("memory lock");
+    
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
