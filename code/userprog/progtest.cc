@@ -15,9 +15,11 @@
 #include "synch.h"
 
 #include "memorymanager.h"
+#include "processtable.h"
 
 MemoryManager *memoryManager;
-Lock *memoryLock;
+Lock *memoryLock, *syscallLock;
+ProcessTable *processTable;
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -30,7 +32,9 @@ StartProcess(const char *filename)
 {
     memoryManager = new MemoryManager(NumPhysPages);
     memoryLock = new Lock("memory lock");
-    
+    syscallLock = new Lock("syscall lock");
+    processTable = new ProcessTable(100);
+
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 

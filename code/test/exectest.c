@@ -10,6 +10,6 @@ int
 main()
 {
     int result = 1000;
-    result = Exec("../test/exittest");
+    result = Exec("../test/halt");
     Exit(result);
 }

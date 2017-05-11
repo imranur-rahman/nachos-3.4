@@ -96,12 +96,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
             pageTable[i].physicalPage = memoryManager->AllocPage();
         else
         {
-            --i;
-            while(i < 0)
-            {
-                memoryManager->FreePage(pageTable[i].physicalPage);
-                --i;
-            }
+            for(j = 0; j < i; ++j)
+                memoryManager->FreePage(pageTable[j].physicalPage);
             ASSERT(false);
         }
 

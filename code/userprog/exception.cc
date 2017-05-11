@@ -47,15 +47,91 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
+#include "processtable.h"
+
+extern ProcessTable *processTable;
+extern Lock *syscallLock;
+
+void processCreator(void *arg)
+{
+		printf("asjdhfajsdhfkja\n");
+
+	currentThread->space->InitRegisters();
+	currentThread->space->RestoreState();
+	printf("asjdhfajsdhfkja\n");
+	// load page table register
+	machine->Run(); // jump to the user progam
+	ASSERT(false); // machine->Run never returns;
+}
+
+void updateAllPCReg()
+{
+	/* routine task – do at last -- generally manipulate PCReg,
+	PrevPCReg, NextPCReg so that they point to proper place*/
+	int pc;
+	pc=machine->ReadRegister(PCReg);
+	machine->WriteRegister(PrevPCReg,pc);
+	pc=machine->ReadRegister(NextPCReg);
+	machine->WriteRegister(PCReg,pc);
+	pc += 4;
+	machine->WriteRegister(NextPCReg,pc);
+}
 
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt)) {
-		DEBUG('a', "Shutdown, initiated by user program.\n");
-	   	interrupt->Halt();
+    if (which == SyscallException) {
+    	if(type == SC_Halt){
+			DEBUG('a', "Shutdown, initiated by user program.\n");
+		   	interrupt->Halt();
+	    }
+	    else if(type == SC_Exec  ||  type == SC_Exit){
+	    	syscallLock->Acquire();
+	    	int bufadd = machine->ReadRegister(4);
+
+	    	char *filename = new char[100];
+			//find a proper place to free this allocation
+			int ch;
+			if(!machine->ReadMem(bufadd,1,&ch))
+				return;
+			unsigned int i=0;
+			while( ch != 0 )
+			{
+				filename[i] = (char)ch;
+				bufadd += 1;
+				i++;
+				if(!machine->ReadMem(bufadd,1,&ch))
+					return;
+			}
+			filename[i]=(char)0;
+			/* now filename contains the file */
+			OpenFile *executable = fileSystem->Open(filename);
+			AddrSpace *space = new AddrSpace(executable);
+			Thread * t = new Thread("tname");
+			t->space = space;
+			delete executable;
+			t->id = processTable->Alloc( (void *) t );
+			unsigned int processId = t->id;
+			syscallLock->Release();
+
+
+			t->Fork(processCreator, (void *) &processId);
+			/* return the process id for the newly created process, return value
+			is to write at R2 */
+			machine->WriteRegister(2, processId);
+			updateAllPCReg();
+			printf("fuck you\n");
+	    }
+	    /*else if(type == SC_Exit)
+	    {
+	    	printf("fuck me\n");
+	    }*/
+	    else {
+	    	printf("Unexpected user mode exception %d %d\n", which, type);
+			ASSERT(false);
+	    }
     } else {
 		printf("Unexpected user mode exception %d %d\n", which, type);
 		ASSERT(false);
