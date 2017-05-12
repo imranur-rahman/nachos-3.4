@@ -49,10 +49,12 @@
 //----------------------------------------------------------------------
 #include "processtable.h"
 #include "memorymanager.h"
+#include "synchconsole.h"
 
 extern ProcessTable *processTable;
 extern Lock *syscallLock;
 extern MemoryManager *memoryManager;
+extern SynchConsole * synchConsole;
 
 void processCreator(void *arg)
 {
@@ -109,17 +111,21 @@ ExceptionHandler(ExceptionType which)
 			}
 			filename[i]=(char)0;
 			/* now filename contains the file */
+
 			OpenFile *executable = fileSystem->Open(filename);
 			AddrSpace *space = new AddrSpace(executable);
 			Thread * t = new Thread("tname");
 			t->space = space;
+
 			delete executable;
+
 			t->id = processTable->Alloc( (void *) t );
 			unsigned int processId = t->id;
+
 			syscallLock->Release();
 
-
 			t->Fork(processCreator, (void *) &processId);
+
 			/* return the process id for the newly created process, return value
 			is to write at R2 */
 			machine->WriteRegister(2, processId);
@@ -146,6 +152,26 @@ ExceptionHandler(ExceptionType which)
 	    		currentThread->Finish();
 
 	    	//(void) interrupt->SetLevel(oldLevel);
+	    }
+	    else if(type == SC_Read)
+	    {
+	    	syscallLock->Acquire();
+	    	printf("in reading\n");
+	    	int addr = machine->ReadRegister(4);
+	    	int size = machine->ReadRegister(5);
+	    	synchConsole->Read(addr, size, currentThread->id);
+	    	syscallLock->Release();
+	    	updateAllPCReg();
+	    }
+	    else if(type == SC_Write)
+	    {
+	    	syscallLock->Acquire();
+	    	printf("in writing\n");
+	    	int addr = machine->ReadRegister(4);
+	    	int size = machine->ReadRegister(5);
+	    	synchConsole->Write(addr, size, currentThread->id);
+	    	syscallLock->Release();
+	    	updateAllPCReg();
 	    }
 	    else {
 	    	printf("Unexpected user mode exception %d %d\n", which, type);

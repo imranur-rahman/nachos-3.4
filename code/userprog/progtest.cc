@@ -16,10 +16,20 @@
 
 #include "memorymanager.h"
 #include "processtable.h"
+#include "synchconsole.h"
 
 MemoryManager *memoryManager;
 Lock *memoryLock, *syscallLock;
 ProcessTable *processTable;
+
+SynchConsole *synchConsole;
+
+Semaphore *synchReadAvail;
+Semaphore *synchWriteDone;
+
+static void SynchReadAvail(void* arg) { synchReadAvail->V(); }
+static void SynchWriteDone(void* arg) { synchWriteDone->V(); }
+
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -34,6 +44,11 @@ StartProcess(const char *filename)
     memoryLock = new Lock("memory lock");
     syscallLock = new Lock("syscall lock");
     processTable = new ProcessTable(100);
+
+    synchConsole = new SynchConsole(NULL, NULL, SynchReadAvail, SynchWriteDone, 0);
+    synchReadAvail = new Semaphore("synchReadAvail", 0);
+    synchWriteDone = new Semaphore("synchWriteDone", 0);
+
 
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
