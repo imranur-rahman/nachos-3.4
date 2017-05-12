@@ -48,17 +48,17 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 #include "processtable.h"
+#include "memorymanager.h"
 
 extern ProcessTable *processTable;
 extern Lock *syscallLock;
+extern MemoryManager *memoryManager;
 
 void processCreator(void *arg)
 {
-		printf("asjdhfajsdhfkja\n");
-
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
-	printf("asjdhfajsdhfkja\n");
+	printf("fork successfully executed\n");
 	// load page table register
 	machine->Run(); // jump to the user progam
 	ASSERT(false); // machine->Run never returns;
@@ -87,7 +87,9 @@ ExceptionHandler(ExceptionType which)
 			DEBUG('a', "Shutdown, initiated by user program.\n");
 		   	interrupt->Halt();
 	    }
-	    else if(type == SC_Exec  ||  type == SC_Exit){
+	    else if(type == SC_Exec){
+	   	    //IntStatus oldLevel = interrupt->SetLevel(IntOff);   //disable interrupt
+
 	    	syscallLock->Acquire();
 	    	int bufadd = machine->ReadRegister(4);
 
@@ -122,12 +124,29 @@ ExceptionHandler(ExceptionType which)
 			is to write at R2 */
 			machine->WriteRegister(2, processId);
 			updateAllPCReg();
-			printf("fuck you\n");
+			printf("thread with id %d created\n", processId);
+			//(void) interrupt->SetLevel(oldLevel);               //re enable interrupt
 	    }
-	    /*else if(type == SC_Exit)
+	    else if(type == SC_Exit)
 	    {
-	    	printf("fuck me\n");
-	    }*/
+	    	//IntStatus oldLevel = interrupt->SetLevel(IntOff);
+	    	syscallLock->Acquire();
+
+	    	int size = machine->pageTableSize;
+	    	for(int i = 0; i < size; ++i)
+	    		memoryManager->FreePage(machine->pageTable[i].physicalPage);
+	    	processTable->Release(currentThread->id);
+
+	    	printf("exited with exit code %d\n", machine->ReadRegister(4));
+	    	syscallLock->Release();
+
+	    	if(processTable->nowSize == 0)
+	    		interrupt->Halt();
+	    	else 
+	    		currentThread->Finish();
+
+	    	//(void) interrupt->SetLevel(oldLevel);
+	    }
 	    else {
 	    	printf("Unexpected user mode exception %d %d\n", which, type);
 			ASSERT(false);

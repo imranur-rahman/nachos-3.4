@@ -29,11 +29,11 @@ public:
 	int Alloc(void *object);
 	void *Get(int index);
 	void Release(int index);
+	int nowSize, maxSize;
 private:
 	Lock *processTableLock;
 	BitMap *bitMap;
 	Process **processes;
-	int nowSize, maxSize;
 };
 
 #endif

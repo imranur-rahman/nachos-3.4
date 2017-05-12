@@ -39,12 +39,13 @@ add_array(int n)
 int
 main ()
 {
-    int sum;
-    sum = 1 + 4;
+    //int sum;
+    //sum = 1 + 4;
 
     //verify_array(48);
     //sum = add_array(48);
     //verify_array(48);
-    Halt();
-    //Exit(sum);
+    //Exec("../test/halt");
+    //Halt();
+    //Exit(0);
 }

@@ -645,7 +645,7 @@ exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  ../threads/list.h ../machine/interrupt.h ../threads/list.h \
  ../machine/stats.h ../machine/timer.h ../userprog/syscall.h \
  ../userprog/processtable.h ../userprog/bitmap.h ../filesys/openfile.h \
- ../threads/synch.h
+ ../threads/synch.h ../userprog/memorymanager.h
 progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../threads/system.h ../threads/copyright.h \
  ../threads/utility.h ../machine/sysdep.h /usr/include/stdlib.h \

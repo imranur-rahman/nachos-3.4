@@ -44,6 +44,7 @@ StartProcess(const char *filename)
     }
     space = new AddrSpace(executable);    
     currentThread->space = space;
+    currentThread->id = processTable->Alloc( (void *) currentThread );
 
     delete executable;			// close file
 

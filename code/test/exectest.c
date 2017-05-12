@@ -10,6 +10,6 @@ int
 main()
 {
     int result = 1000;
-    result = Exec("../test/halt");
-    Exit(result);
+    result = Exec("../test/tier2");
+    //Exit(result);
 }
