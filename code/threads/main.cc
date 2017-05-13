@@ -61,6 +61,7 @@ void Copy(const char *unixFile, const char *nachosFile);
 void Print(const char *file);
 void PerformanceTest(void);
 void StartProcess(const char *file);
+void StartMultipleProcess(int argc, char **argv);
 void ConsoleTest(const char *in, const char *out);
 void MailTest(int networkID);
 
@@ -98,21 +99,30 @@ main(int argc, char **argv)
             printf ("%s",copyright);
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
-	    ASSERT(argc > 1);
-            StartProcess(*(argv + 1));
+	    	ASSERT(argc > 1);
+            //StartProcess(*(argv + 1));
+	    	StartMultipleProcess(argc, argv);
             argCount = 2;
-        } else if (!strcmp(*argv, "-c")) {      // test the console
-	    if (argc == 1)
-	        ConsoleTest(NULL, NULL);
-	    else {
-		ASSERT(argc > 2);
-	        ConsoleTest(*(argv + 1), *(argv + 2));
-	        argCount = 3;
-	    }
-	    interrupt->Halt();		// once we start the console, then 
-					// Nachos will loop forever waiting 
-					// for console input
-	}
+	    	/*argCount = 0;
+	    	for(int i = 1; i < argc; ++i)
+	    	{
+	    		StartProcess(*(argv + i));
+	    		argCount++;
+	    	}
+	    	printf("%d\n", argCount);*/
+        } 
+        else if (!strcmp(*argv, "-c")) {      // test the console
+		    if (argc == 1)
+		        ConsoleTest(NULL, NULL);
+		    else {
+				ASSERT(argc > 2);
+		        ConsoleTest(*(argv + 1), *(argv + 2));
+		        argCount = 3;
+		    }
+		    interrupt->Halt();		// once we start the console, then 
+						// Nachos will loop forever waiting 
+						// for console input
+		}
 #endif // USER_PROGRAM
 #ifdef FILESYS
 	if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos

@@ -17,6 +17,7 @@
 #include "memorymanager.h"
 #include "processtable.h"
 #include "synchconsole.h"
+#include "thread.h"
 
 MemoryManager *memoryManager;
 Lock *memoryLock, *syscallLock;
@@ -31,6 +32,31 @@ static void SynchReadAvail(void* arg) { synchReadAvail->V(); }
 static void SynchWriteDone(void* arg) { synchWriteDone->V(); }
 
 
+class ExecuteOnce{
+public:
+    ExecuteOnce()
+    {
+        if(t == 0){
+            memoryManager = new MemoryManager(NumPhysPages);
+            memoryLock = new Lock("memory lock");
+            syscallLock = new Lock("syscall lock");
+            processTable = new ProcessTable(100);
+
+            synchConsole = new SynchConsole(NULL, NULL, SynchReadAvail, SynchWriteDone, 0);
+            synchReadAvail = new Semaphore("synchReadAvail", 0);
+            synchWriteDone = new Semaphore("synchWriteDone", 0);
+
+            t++;
+        }
+    }
+private:
+    static int t;
+};
+
+int ExecuteOnce::t = 0;
+
+
+
 //----------------------------------------------------------------------
 // StartProcess
 // 	Run a user program.  Open the executable, load it into
@@ -38,17 +64,11 @@ static void SynchWriteDone(void* arg) { synchWriteDone->V(); }
 //----------------------------------------------------------------------
 
 void
-StartProcess(const char *filename)
+//StartProcess(const char *filename)
+StartProcess(void *arg)
 {
-    memoryManager = new MemoryManager(NumPhysPages);
-    memoryLock = new Lock("memory lock");
-    syscallLock = new Lock("syscall lock");
-    processTable = new ProcessTable(100);
-
-    synchConsole = new SynchConsole(NULL, NULL, SynchReadAvail, SynchWriteDone, 0);
-    synchReadAvail = new Semaphore("synchReadAvail", 0);
-    synchWriteDone = new Semaphore("synchWriteDone", 0);
-
+    const char *filename = (const char *) arg;
+    ExecuteOnce *executeOnce = new ExecuteOnce();
 
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
@@ -70,6 +90,18 @@ StartProcess(const char *filename)
     ASSERT(false);			// machine->Run never returns;
 					// the address space exits
 					// by doing the syscall "exit"
+}
+
+void
+StartMultipleProcess(int argc, char **argv)
+{
+    for(int i = 1; i < argc; ++i)
+    {
+        char *name = new char[100];
+        sprintf(name, "multiple proces %d", i);
+        Thread *newThread = new Thread (name);
+        newThread->Fork(StartProcess, (void *)*(argv + i));
+    }
 }
 
 // Data structures needed for the console test.  Threads making

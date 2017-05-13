@@ -80,7 +80,7 @@ void ExitProcess()
 
 	if(processTable->nowSize == 0)
 		interrupt->Halt();
-	else 
+	else
 		currentThread->Finish();
 }
 
