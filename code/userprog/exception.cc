@@ -66,6 +66,24 @@ void processCreator(void *arg)
 	ASSERT(false); // machine->Run never returns;
 }
 
+void ExitProcess()
+{
+	syscallLock->Acquire();
+
+	int size = machine->pageTableSize;
+	for(int i = 0; i < size; ++i)
+		memoryManager->FreePage(machine->pageTable[i].physicalPage);
+	processTable->Release(currentThread->id);
+
+	printf("exited with exit code %d\n", machine->ReadRegister(4));
+	syscallLock->Release();
+
+	if(processTable->nowSize == 0)
+		interrupt->Halt();
+	else 
+		currentThread->Finish();
+}
+
 void updateAllPCReg()
 {
 	/* routine task – do at last -- generally manipulate PCReg,
@@ -135,23 +153,7 @@ ExceptionHandler(ExceptionType which)
 	    }
 	    else if(type == SC_Exit)
 	    {
-	    	//IntStatus oldLevel = interrupt->SetLevel(IntOff);
-	    	syscallLock->Acquire();
-
-	    	int size = machine->pageTableSize;
-	    	for(int i = 0; i < size; ++i)
-	    		memoryManager->FreePage(machine->pageTable[i].physicalPage);
-	    	processTable->Release(currentThread->id);
-
-	    	printf("exited with exit code %d\n", machine->ReadRegister(4));
-	    	syscallLock->Release();
-
-	    	if(processTable->nowSize == 0)
-	    		interrupt->Halt();
-	    	else 
-	    		currentThread->Finish();
-
-	    	//(void) interrupt->SetLevel(oldLevel);
+	    	ExitProcess();
 	    }
 	    else if(type == SC_Read)
 	    {
@@ -175,10 +177,46 @@ ExceptionHandler(ExceptionType which)
 	    }
 	    else {
 	    	printf("Unexpected user mode exception %d %d\n", which, type);
-			ASSERT(false);
+	    	ExitProcess();
 	    }
-    } else {
+    }
+    else if(which == PageFaultException)
+    {
+    	printf("PageFaultException\n");
+    	ExitProcess();
+    } 
+    else if(which == ReadOnlyException)
+    {
+    	printf("ReadOnlyException\n");
+    	ExitProcess();
+    }
+    else if(which == BusErrorException)
+    {
+    	printf("BusErrorException\n");
+    	ExitProcess();
+    }
+    else if(which == AddressErrorException)
+    {
+    	printf("AddressErrorException\n");
+    	ExitProcess();
+    }
+    else if(which == OverflowException)
+    {
+    	printf("OverflowException\n");
+    	ExitProcess();
+    }
+    else if(which == NumExceptionTypes)
+    {
+    	printf("NumExceptionTypes\n");
+    	ExitProcess();
+    }
+    else if(which == IllegalInstrException)
+    {
+    	printf("IllegalInstrException\n");
+    	ExitProcess();
+    }
+    else {
 		printf("Unexpected user mode exception %d %d\n", which, type);
-		ASSERT(false);
+		ExitProcess();
     }
 }
