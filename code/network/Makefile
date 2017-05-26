@@ -707,7 +707,7 @@ progtest.o: ../userprog/progtest.cc /usr/include/stdc-predef.h \
  ../machine/network.h ../threads/synchlist.h ../threads/synch.h \
  ../machine/console.h ../userprog/addrspace.h ../userprog/memorymanager.h \
  ../userprog/bitmap.h ../filesys/openfile.h ../userprog/processtable.h \
- ../userprog/synchconsole.h
+ ../userprog/synchconsole.h ../threads/thread.h
 console.o: ../machine/console.cc /usr/include/stdc-predef.h \
  ../threads/copyright.h ../machine/console.h ../threads/utility.h \
  ../threads/copyright.h ../machine/sysdep.h /usr/include/stdlib.h \

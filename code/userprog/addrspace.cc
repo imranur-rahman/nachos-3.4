@@ -80,7 +80,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
+    //ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
@@ -91,17 +91,17 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
     	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-    	//pageTable[i].physicalPage = i;
-        if(memoryManager->IsAnyPageFree() == true)
+    	pageTable[i].physicalPage = i;
+        /*if(memoryManager->IsAnyPageFree() == true)
             pageTable[i].physicalPage = memoryManager->AllocPage();
         else
         {
             for(j = 0; j < i; ++j)
                 memoryManager->FreePage(pageTable[j].physicalPage);
             ASSERT(false);
-        }
+        }*/
 
-    	pageTable[i].valid = true;
+    	pageTable[i].valid = false;
     	pageTable[i].use = false;
     	pageTable[i].dirty = false;
     	pageTable[i].readOnly = false;  // if the code segment was entirely on 
@@ -112,15 +112,15 @@ AddrSpace::AddrSpace(OpenFile *executable)
     // zero out the entire address space, to zero the unitialized data segment 
     // and the stack segment
     //bzero(machine->mainMemory, size);
-    memoryLock->Acquire();
-    for(i = 0; i < numPages; ++i)
+    //memoryLock->Acquire();
+    /*for(i = 0; i < numPages; ++i)
     {
         bzero(&machine->mainMemory[pageTable[i].physicalPage * PageSize], PageSize);
-    }
+    }*/
 
     
     // then, copy in the code and data segments into memory
-    unsigned int numPagesForCode = divRoundUp(noffH.code.size, PageSize);
+    /*unsigned int numPagesForCode = divRoundUp(noffH.code.size, PageSize);
     DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 		noffH.code.virtualAddr, noffH.code.size);
     for(i = 0; i < numPagesForCode; ++i)
@@ -139,8 +139,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[ pageTable[i].physicalPage * PageSize ]),
                             PageSize, 
                             noffH.initData.inFileAddr + (j - numPagesForCode) * PageSize);
-    }
-    memoryLock->Release();
+    }*/
+    //memoryLock->Release();
 
 }
 

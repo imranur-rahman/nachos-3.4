@@ -60,7 +60,7 @@ void processCreator(void *arg)
 {
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
-	printf("fork successfully executed\n");
+	//printf("fork successfully executed\n");
 	// load page table register
 	machine->Run(); // jump to the user progam
 	ASSERT(false); // machine->Run never returns;
@@ -148,7 +148,7 @@ ExceptionHandler(ExceptionType which)
 			is to write at R2 */
 			machine->WriteRegister(2, processId);
 			updateAllPCReg();
-			printf("thread with id %d created\n", processId);
+			//printf("thread with id %d created\n", processId);
 			//(void) interrupt->SetLevel(oldLevel);               //re enable interrupt
 	    }
 	    else if(type == SC_Exit)
