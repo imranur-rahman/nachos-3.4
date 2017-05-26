@@ -199,11 +199,12 @@ ExceptionHandler(ExceptionType which)
     	int physicalPageNo;
     	if(memoryManager->IsAnyPageFree() == true)
     	{
-    		physicalPageNo = memoryManager->AllocPage();
+    		physicalPageNo = memoryManager->Alloc(currentThread->id, 
+    												&(machine->pageTable[vpn]));
     	}
     	else 
     	{
-    		//will force a free page
+    		physicalPageNo = memoryManager->AllocByForce();
     		//will do this later
     	}
     	currentThread->space->loadIntoFreePage(addr, physicalPageNo);

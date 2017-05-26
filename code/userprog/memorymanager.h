@@ -13,6 +13,8 @@ class MemoryManager{
 public:
 	MemoryManager(int numPages);
 	~MemoryManager();
+	int Alloc(int processNo, TranslationEntry *entry);
+	int AllocByForce();
 	int AllocPage();
 	void FreePage(int physPageNum);
 	bool PageIsAllocated(int physPageNum);
@@ -21,6 +23,8 @@ public:
 private:
 	BitMap *bitMap;
 	Lock *lock;
+	int *processMap;
+	TranslationEntry **entries;
 };
 
 #endif

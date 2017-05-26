@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort array exittest exectest tier2
+all: halt shell matmult sort array exittest exectest tier2 snake
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -89,3 +89,9 @@ tier2.o: tier2.c
 tier2: tier2.o start.o
 	$(LD) $(LDFLAGS) start.o tier2.o -o tier2.coff
 	../bin/coff2noff tier2.coff tier2
+
+snake.o: snake.c
+	$(CC) $(CFLAGS) -c snake.c
+snake: snake.o start.o
+	$(LD) $(LDFLAGS) start.o snake.o -o snake.coff
+	../bin/coff2noff snake.coff snake
