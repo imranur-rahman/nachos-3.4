@@ -18,7 +18,6 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
-#include "noff.h"
 #include "synch.h"
 #include "memorymanager.h"
 
@@ -72,8 +71,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
+    
+    this->noffH = noffH;
+    this->executable = executable;
 
-// how big is address space?
+    // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
@@ -91,7 +93,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
     	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-    	pageTable[i].physicalPage = i;
+    	pageTable[i].physicalPage = -1;
         /*if(memoryManager->IsAnyPageFree() == true)
             pageTable[i].physicalPage = memoryManager->AllocPage();
         else
@@ -152,6 +154,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 AddrSpace::~AddrSpace()
 {
    delete pageTable;
+   delete executable;           // close file
 }
 
 //----------------------------------------------------------------------
@@ -209,4 +212,75 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+int min(int a, int b)
+{
+    if(a < b)
+        return a;
+    return b;
+}
+
+
+int 
+AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
+    int vpn = addr / PageSize;
+    pageTable[vpn].physicalPage = physicalPageNo;
+    pageTable[vpn].valid = true;
+
+    int codeOffset, codeSize, initDataOffset, initDataSize, uninitDataSize;
+    //jei page e poreche tar start e niye jacchi
+    addr = ( addr / PageSize ) * PageSize;
+
+    if(addr >= noffH.code.virtualAddr  &&  addr < noffH.code.virtualAddr + noffH.code.size)
+    {
+        //addr koto tomo page e poreche, tar start byte offset
+        codeOffset = ( ( addr - noffH.code.virtualAddr ) / PageSize ) * PageSize;
+        //code segment theke koto byte porte hobe
+        codeSize = min( noffH.code.size - codeOffset, PageSize );
+
+        executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
+                            codeSize, 
+                            noffH.code.inFileAddr + codeOffset);
+
+        if( codeSize < PageSize )
+        {
+            initDataSize = min( PageSize - codeSize, noffH.initData.size );
+
+            executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize + codeSize ]),
+                            initDataSize, 
+                            noffH.initData.inFileAddr);
+
+            if( codeSize + initDataSize < PageSize )
+            {
+                uninitDataSize = PageSize - codeSize - initDataSize;
+
+                bzero(&machine->mainMemory[ pageTable[vpn].physicalPage * PageSize + codeSize + initDataSize ],
+                    uninitDataSize);
+            }
+        }
+    }
+    else if(addr >= noffH.initData.virtualAddr  &&  addr < noffH.initData.virtualAddr + noffH.initData.size)
+    {
+        initDataOffset = ( (addr - noffH.initData.virtualAddr) / PageSize ) * PageSize;
+        initDataSize = min( noffH.initData.size - initDataOffset, PageSize );
+
+        executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
+                            initDataSize, 
+                            noffH.initData.inFileAddr + initDataOffset);
+
+        if( initDataSize < PageSize )
+        {
+            uninitDataSize = PageSize - initDataSize;
+
+            bzero(&machine->mainMemory[ pageTable[vpn].physicalPage * PageSize + initDataSize ],
+                uninitDataSize);
+        }
+    }
+    else
+    {
+        bzero(&machine->mainMemory[pageTable[vpn].physicalPage * PageSize], PageSize);
+    }
+
+    return 0;
 }

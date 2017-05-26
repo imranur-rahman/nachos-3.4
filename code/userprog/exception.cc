@@ -72,7 +72,8 @@ void ExitProcess()
 
 	int size = machine->pageTableSize;
 	for(int i = 0; i < size; ++i)
-		memoryManager->FreePage(machine->pageTable[i].physicalPage);
+		if(machine->pageTable[i].valid == true)
+			memoryManager->FreePage(machine->pageTable[i].physicalPage);
 	processTable->Release(currentThread->id);
 
 	printf("exited with exit code %d\n", machine->ReadRegister(4));
@@ -110,14 +111,23 @@ ExceptionHandler(ExceptionType which)
 	    else if(type == SC_Exec){
 	   	    //IntStatus oldLevel = interrupt->SetLevel(IntOff);   //disable interrupt
 
+	   	    //printf("in exec\n");
+
 	    	syscallLock->Acquire();
 	    	int bufadd = machine->ReadRegister(4);
 
 	    	char *filename = new char[100];
 			//find a proper place to free this allocation
+			//printf("before readmem\n");
 			int ch;
 			if(!machine->ReadMem(bufadd,1,&ch))
-				return;
+			{
+				if(!machine->ReadMem(bufadd,1,&ch))
+					//return;
+					Exit(-1);
+			}
+			//printf("after readmem\n");
+
 			unsigned int i=0;
 			while( ch != 0 )
 			{
@@ -129,13 +139,14 @@ ExceptionHandler(ExceptionType which)
 			}
 			filename[i]=(char)0;
 			/* now filename contains the file */
+			printf("%s\n", filename);
 
 			OpenFile *executable = fileSystem->Open(filename);
 			AddrSpace *space = new AddrSpace(executable);
 			Thread * t = new Thread("tname");
 			t->space = space;
 
-			delete executable;
+			//delete executable;
 
 			t->id = processTable->Alloc( (void *) t );
 			unsigned int processId = t->id;
@@ -183,7 +194,21 @@ ExceptionHandler(ExceptionType which)
     else if(which == PageFaultException)
     {
     	printf("PageFaultException\n");
-    	ExitProcess();
+    	int addr = machine->ReadRegister(39);
+    	int vpn= addr / PageSize;
+    	int physicalPageNo;
+    	if(memoryManager->IsAnyPageFree() == true)
+    	{
+    		physicalPageNo = memoryManager->AllocPage();
+    	}
+    	else 
+    	{
+    		//will force a free page
+    		//will do this later
+    	}
+    	currentThread->space->loadIntoFreePage(addr, physicalPageNo);
+
+    	//ExitProcess();
     } 
     else if(which == ReadOnlyException)
     {

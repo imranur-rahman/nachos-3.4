@@ -3,6 +3,6 @@
 int
 main()
 {
-    Exec("../test/exittest");
+    Exec("../test/halt");
     Exit(1);
 }
