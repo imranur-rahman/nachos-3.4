@@ -195,7 +195,7 @@ ExceptionHandler(ExceptionType which)
     {
     	printf("PageFaultException\n");
     	int addr = machine->ReadRegister(39);
-    	int vpn= addr / PageSize;
+    	int vpn = addr / PageSize;
     	int physicalPageNo;
     	if(memoryManager->IsAnyPageFree() == true)
     	{
@@ -204,7 +204,8 @@ ExceptionHandler(ExceptionType which)
     	}
     	else 
     	{
-    		physicalPageNo = memoryManager->AllocByForce();
+    		physicalPageNo = memoryManager->AllocByForce(currentThread->id, 
+    												&(machine->pageTable[vpn]));
     		//will do this later
     	}
     	currentThread->space->loadIntoFreePage(addr, physicalPageNo);

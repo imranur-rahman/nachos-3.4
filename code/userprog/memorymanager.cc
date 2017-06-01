@@ -1,4 +1,7 @@
 #include "memorymanager.h"
+#include "processtable.h"
+
+extern ProcessTable *processTable;
 
 MemoryManager::MemoryManager(int numPages)
 {
@@ -35,14 +38,36 @@ MemoryManager::Alloc(int processNo, TranslationEntry *entry)
 }
 
 int
-MemoryManager::AllocByForce()
+MemoryManager::AllocByForce(int processNo, TranslationEntry *entry)
 {
 	lock->Acquire();
-	int ret = Random() % NumPhysPages;
+	int ret;//victim page
+	//kon physical page ke evict korbo
+
+	//random
+	ret = Random() % NumPhysPages;
+	//ret = (Random() % (NumPhysPages - 1)) + 1;
+	
+	//lru
+	/*ret = 1;
+	for(int i = 1; i < NumPhysPages; ++i)
+	{
+		if(entries[i]->lastAccessed < entries[ret]->lastAccessed)
+		{
+			ret = i;
+		}
+	}*/
+	
+	//printf("#%d of physical page will be evicted\n", ret);
+
 	if(entries[ret] != NULL)
 	{
-		entries[ret]->valid = false;
-		//physicalPage chaile -1 kora jeto
+
+		Thread* t = (Thread*) processTable->Get( processMap[ret] );
+		t->space->saveIntoSwapSpace( entries[ret]->virtualPage );
+
+		processMap[ret] = processNo;
+		entries[ret] = entry;
 	}
 	else
 	{

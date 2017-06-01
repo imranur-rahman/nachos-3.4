@@ -16,6 +16,7 @@
 #include "copyright.h"
 #include "filesys.h"
 #include "noff.h"
+#include "swappage.h"
 
 #define UserStackSize		1024 	// increase this as necessary!
 
@@ -33,6 +34,9 @@ class AddrSpace {
     void RestoreState();		// info on a context switch 
 
     int loadIntoFreePage(int addr, int physicalPageNo);
+    int saveIntoSwapSpace(int vpn);
+    int loadFromSwapSpace(int vpn);
+    bool isSwapPageExists(int vpn);
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
@@ -41,6 +45,7 @@ class AddrSpace {
 					// address space
     OpenFile *executable;
     NoffHeader noffH;
+    SwapPage **swapPage;
 };
 
 #endif // ADDRSPACE_H

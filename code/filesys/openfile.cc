@@ -116,6 +116,8 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
+    //printf("something\n");
+    DEBUG('b', "at OpenFile::ReadAt %d number of bytes\n", numBytes);
 
     if ((numBytes <= 0) || (position >= fileLength))
     	return 0; 				// check request
@@ -123,6 +125,8 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 	numBytes = fileLength - position;
     DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
+
+    //printf("file read at\n");
 
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);

@@ -82,6 +82,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
+    swapPage = new SwapPage*[numPages];
+
     //ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
@@ -227,29 +229,40 @@ AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
     int vpn = addr / PageSize;
     pageTable[vpn].physicalPage = physicalPageNo;
     pageTable[vpn].valid = true;
+    //pageTable[vpn].dirty = true;
 
-    int codeOffset, codeSize, initDataOffset, initDataSize, uninitDataSize;
+    if(isSwapPageExists(vpn))
+    {
+        loadFromSwapSpace(vpn);
+        return 1;
+    }
+
+    //printf("in loadIntoFreePage\n");
+
+    int codeOffset, codeSize, initDataOffset, initDataSize, uninitDataSize, temp;
     //jei page e poreche tar start e niye jacchi
     addr = ( addr / PageSize ) * PageSize;
 
-    if(addr >= noffH.code.virtualAddr  &&  addr < noffH.code.virtualAddr + noffH.code.size)
+    if(noffH.code.size > 0  &&  addr >= noffH.code.virtualAddr  &&  addr < noffH.code.virtualAddr + noffH.code.size)
     {
         //addr koto tomo page e poreche, tar start byte offset
         codeOffset = ( ( addr - noffH.code.virtualAddr ) / PageSize ) * PageSize;
         //code segment theke koto byte porte hobe
         codeSize = min( noffH.code.size - codeOffset, PageSize );
 
-        executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
+        temp = executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
                             codeSize, 
                             noffH.code.inFileAddr + codeOffset);
+        DEBUG('b', "\tloading %d bytes of code\n", temp);
 
-        if( codeSize < PageSize )
+        if( noffH.initData.size > 0  &&  codeSize < PageSize )
         {
             initDataSize = min( PageSize - codeSize, noffH.initData.size );
 
-            executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize + codeSize ]),
+            temp = executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize + codeSize ]),
                             initDataSize, 
                             noffH.initData.inFileAddr);
+            DEBUG('b', "\tloading %d bytes of initData\n", temp);
 
             if( codeSize + initDataSize < PageSize )
             {
@@ -260,14 +273,15 @@ AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
             }
         }
     }
-    else if(addr >= noffH.initData.virtualAddr  &&  addr < noffH.initData.virtualAddr + noffH.initData.size)
+    else if(noffH.initData.size > 0  &&  addr >= noffH.initData.virtualAddr  &&  addr < noffH.initData.virtualAddr + noffH.initData.size)
     {
         initDataOffset = ( (addr - noffH.initData.virtualAddr) / PageSize ) * PageSize;
         initDataSize = min( noffH.initData.size - initDataOffset, PageSize );
 
-        executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
+        temp = executable->ReadAt(&(machine->mainMemory[ pageTable[vpn].physicalPage * PageSize ]),
                             initDataSize, 
                             noffH.initData.inFileAddr + initDataOffset);
+        DEBUG('b', "\tloading %d bytes of initData\n", temp);
 
         if( initDataSize < PageSize )
         {
@@ -283,4 +297,38 @@ AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
     }
 
     return 0;
+}
+
+int
+AddrSpace::saveIntoSwapSpace(int vpn)
+{
+    if(isSwapPageExists(vpn) == false)
+    {
+        swapPage[vpn] = new SwapPage();
+        swapPage[vpn]->PageOut(pageTable[vpn].physicalPage);
+    }
+    else if(pageTable[vpn].dirty == true)
+    {        
+        pageTable[vpn].dirty = false;
+        swapPage[vpn]->PageOut(pageTable[vpn].physicalPage);
+    }
+    pageTable[vpn].valid = false;
+}
+
+int
+AddrSpace::loadFromSwapSpace(int vpn)
+{
+    if(isSwapPageExists(vpn) == false)
+    {
+        printf("loading error from swap page\n");
+    }
+    swapPage[vpn]->PageIn(pageTable[vpn].physicalPage);
+}
+
+bool
+AddrSpace::isSwapPageExists(int vpn)
+{
+    if(swapPage[vpn] == 0)
+        return false;
+    return true;
 }

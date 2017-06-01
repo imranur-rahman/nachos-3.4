@@ -14,7 +14,7 @@ public:
 	MemoryManager(int numPages);
 	~MemoryManager();
 	int Alloc(int processNo, TranslationEntry *entry);
-	int AllocByForce();
+	int AllocByForce(int processNo, TranslationEntry *entry);
 	int AllocPage();
 	void FreePage(int physPageNum);
 	bool PageIsAllocated(int physPageNum);
