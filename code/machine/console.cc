@@ -143,7 +143,7 @@ Console::GetChar()
 void
 Console::PutChar(char ch)
 {
-    ASSERT(putBusy == false);
+    //ASSERT(putBusy == false);
     WriteFile(writeFileNo, &ch, sizeof(char));
     putBusy = true;
     interrupt->Schedule(ConsoleWriteDone, this, ConsoleTime,

@@ -11,7 +11,7 @@ main()
 {
     int result;
 	char str[4];
-    //result = Exec("../test/exittest");
+    result = Exec("../test/exittest");
 	//void Write(char *buffer, int size, OpenFileId id);
 	
 	str[0] = 'a';

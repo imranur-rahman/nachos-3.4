@@ -56,6 +56,11 @@ extern Lock *syscallLock;
 extern MemoryManager *memoryManager;
 extern SynchConsole * synchConsole;
 
+extern int *pageFaultCount;
+extern int *pageIns;
+extern int *pageOuts;
+extern int NUMOFPROCESSES;
+
 void processCreator(void *arg)
 {
 	currentThread->space->InitRegisters();
@@ -64,6 +69,17 @@ void processCreator(void *arg)
 	// load page table register
 	machine->Run(); // jump to the user progam
 	ASSERT(false); // machine->Run never returns;
+}
+
+void PrintPageFaultInsOuts()
+{
+	for(int i = 0; i < NUMOFPROCESSES; ++i)
+	{
+		if(pageFaultCount[i] == 0   &&   pageIns[i] == 0   &&   pageOuts[i] == 0)
+			continue;
+		printf("\nProcess no #%d: page faults: #%d   page ins: #%d   page outs: #%d\n",
+			i, pageFaultCount[i], pageIns[i], pageOuts[i]);
+	}
 }
 
 void ExitProcess()
@@ -80,7 +96,10 @@ void ExitProcess()
 	syscallLock->Release();
 
 	if(processTable->nowSize == 0)
+	{
+		PrintPageFaultInsOuts();
 		interrupt->Halt();
+	}
 	else
 		currentThread->Finish();
 }
@@ -106,6 +125,7 @@ ExceptionHandler(ExceptionType which)
     if (which == SyscallException) {
     	if(type == SC_Halt){
 			DEBUG('a', "Shutdown, initiated by user program.\n");
+			PrintPageFaultInsOuts();
 		   	interrupt->Halt();
 	    }
 	    else if(type == SC_Exec){
@@ -169,7 +189,7 @@ ExceptionHandler(ExceptionType which)
 	    else if(type == SC_Read)
 	    {
 	    	syscallLock->Acquire();
-	    	printf("in reading\n");
+	    	//printf("in reading\n");
 	    	int addr = machine->ReadRegister(4);
 	    	int size = machine->ReadRegister(5);
 	    	synchConsole->Read(addr, size, currentThread->id);
@@ -179,7 +199,7 @@ ExceptionHandler(ExceptionType which)
 	    else if(type == SC_Write)
 	    {
 	    	syscallLock->Acquire();
-	    	printf("in writing\n");
+	    	//printf("in writing\n");
 	    	int addr = machine->ReadRegister(4);
 	    	int size = machine->ReadRegister(5);
 	    	synchConsole->Write(addr, size, currentThread->id);
@@ -193,9 +213,12 @@ ExceptionHandler(ExceptionType which)
     }
     else if(which == PageFaultException)
     {
-    	printf("PageFaultException\n");
+    	//printf("PageFaultException\n");
+    	pageFaultCount[currentThread->id]++;
+
     	int addr = machine->ReadRegister(39);
     	int vpn = addr / PageSize;
+
     	int physicalPageNo;
     	if(memoryManager->IsAnyPageFree() == true)
     	{
@@ -206,7 +229,6 @@ ExceptionHandler(ExceptionType which)
     	{
     		physicalPageNo = memoryManager->AllocByForce(currentThread->id, 
     												&(machine->pageTable[vpn]));
-    		//will do this later
     	}
     	currentThread->space->loadIntoFreePage(addr, physicalPageNo);
 

@@ -24,6 +24,8 @@
 extern MemoryManager *memoryManager;
 extern Lock *memoryLock;
 
+extern int *pageIns;
+
 //----------------------------------------------------------------------
 // SwapHeader
 // 	Do little endian to big endian conversion on the bytes in the 
@@ -234,6 +236,7 @@ AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
     if(isSwapPageExists(vpn))
     {
         loadFromSwapSpace(vpn);
+        pageIns[currentThread->id]++;
         return 1;
     }
 
@@ -302,17 +305,21 @@ AddrSpace::loadIntoFreePage(int addr, int physicalPageNo){
 int
 AddrSpace::saveIntoSwapSpace(int vpn)
 {
+    int ret;
     if(isSwapPageExists(vpn) == false)
     {
         swapPage[vpn] = new SwapPage();
         swapPage[vpn]->PageOut(pageTable[vpn].physicalPage);
+        ret = 1;
     }
     else if(pageTable[vpn].dirty == true)
     {        
         pageTable[vpn].dirty = false;
         swapPage[vpn]->PageOut(pageTable[vpn].physicalPage);
+        ret = 1;
     }
     pageTable[vpn].valid = false;
+    return ret;
 }
 
 int

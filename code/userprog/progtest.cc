@@ -22,6 +22,10 @@
 MemoryManager *memoryManager;
 Lock *memoryLock, *syscallLock;
 ProcessTable *processTable;
+int *pageFaultCount;
+int *pageIns, *pageOuts;
+
+int NUMOFPROCESSES = 1024;
 
 SynchConsole *synchConsole;
 
@@ -41,6 +45,10 @@ public:
             memoryLock = new Lock("memory lock");
             syscallLock = new Lock("syscall lock");
             processTable = new ProcessTable(100);
+
+            pageFaultCount = new int[NUMOFPROCESSES];
+            pageIns = new int[NUMOFPROCESSES];
+            pageOuts = new int[NUMOFPROCESSES];
 
             synchConsole = new SynchConsole(NULL, NULL, SynchReadAvail, SynchWriteDone, 0);
             synchReadAvail = new Semaphore("synchReadAvail", 0);
@@ -80,6 +88,8 @@ StartProcess(void *arg)
     space = new AddrSpace(executable);    
     currentThread->space = space;
     currentThread->id = processTable->Alloc( (void *) currentThread );
+
+    printf("new process created\n");
 
     
 

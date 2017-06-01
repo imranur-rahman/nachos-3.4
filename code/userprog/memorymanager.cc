@@ -2,6 +2,7 @@
 #include "processtable.h"
 
 extern ProcessTable *processTable;
+extern int *pageOuts;
 
 MemoryManager::MemoryManager(int numPages)
 {
@@ -57,14 +58,17 @@ MemoryManager::AllocByForce(int processNo, TranslationEntry *entry)
 			ret = i;
 		}
 	}*/
-	
+
 	//printf("#%d of physical page will be evicted\n", ret);
 
 	if(entries[ret] != NULL)
 	{
 
 		Thread* t = (Thread*) processTable->Get( processMap[ret] );
-		t->space->saveIntoSwapSpace( entries[ret]->virtualPage );
+		int isPageOut = t->space->saveIntoSwapSpace( entries[ret]->virtualPage );
+
+		if(isPageOut)
+			pageOuts[processNo]++;
 
 		processMap[ret] = processNo;
 		entries[ret] = entry;

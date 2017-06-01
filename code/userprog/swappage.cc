@@ -17,7 +17,7 @@ SwapPage::PageIn(int physicalPageNo)
 {
 	for(int i = 0; i < PageSize; ++i)
 		machine->mainMemory[ physicalPageNo * PageSize + i ] = page[i];
-	printf("page in\n");
+	//printf("page in\n");
 	return 1;
 }
 
@@ -26,6 +26,6 @@ SwapPage::PageOut(int physicalPageNo)
 {
 	for(int i = 0; i < PageSize; ++i)
 		page[i] = machine->mainMemory[ physicalPageNo * PageSize + i ];
-	printf("page out\n");
+	//printf("page out\n");
 	return 1;
 }
